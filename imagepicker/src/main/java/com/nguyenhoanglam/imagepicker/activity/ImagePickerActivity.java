@@ -70,12 +70,14 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
     public static final String INTENT_EXTRA_FOLDER_TITLE = "folderTitle";
     public static final String INTENT_EXTRA_IMAGE_TITLE = "imageTitle";
     public static final String INTENT_EXTRA_IMAGE_DIRECTORY = "imageDirectory";
+    public static final String INTENT_EXTRA_TARGET_FOLDER_PATH = "targetFolderPath";
 
 
     private List<Folder> folders;
     private ArrayList<Image> images;
     private String currentImagePath;
     private String imageDirectory;
+    private String targetFolderPath;
 
     private ArrayList<Image> selectedImages;
     private boolean showCamera;
@@ -159,13 +161,15 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
         if (imageDirectory == null || TextUtils.isEmpty(imageDirectory)) {
             imageDirectory = getString(R.string.image_directory);
         }
+        targetFolderPath = intent.getStringExtra(ImagePickerActivity.INTENT_EXTRA_TARGET_FOLDER_PATH);
 
         showCamera = intent.getBooleanExtra(ImagePickerActivity.INTENT_EXTRA_SHOW_CAMERA, true);
         if (mode == ImagePickerActivity.MODE_MULTIPLE && intent.hasExtra(ImagePickerActivity.INTENT_EXTRA_SELECTED_IMAGES)) {
             selectedImages = intent.getParcelableArrayListExtra(ImagePickerActivity.INTENT_EXTRA_SELECTED_IMAGES);
         }
-        if (selectedImages == null)
+        if (selectedImages == null) {
             selectedImages = new ArrayList<>();
+        }
         images = new ArrayList<>();
 
 
@@ -316,8 +320,9 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
      */
     private void setItemDecoration(int columns) {
         layoutManager.setSpanCount(columns);
-        if (itemOffsetDecoration != null)
+        if (itemOffsetDecoration != null) {
             recyclerView.removeItemDecoration(itemOffsetDecoration);
+        }
         itemOffsetDecoration = new GridSpacingItemDecoration(columns, getResources().getDimensionPixelSize(R.dimen.item_padding), false);
         recyclerView.addItemDecoration(itemOffsetDecoration);
     }
@@ -328,10 +333,11 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
      */
     private void getDataWithPermission() {
         int rc = ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        if (rc == PackageManager.PERMISSION_GRANTED)
+        if (rc == PackageManager.PERMISSION_GRANTED) {
             getData();
-        else
+        } else {
             requestWriteExternalPermission();
+        }
     }
 
     /**
@@ -346,9 +352,9 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
     }
 
     /**
-     * Request for permission
-     * If permission denied or app is first launched, request for permission
-     * If permission denied and user choose 'Nerver Ask Again', show snackbar with an action that navigate to app settings
+     * Request for permission If permission denied or app is first launched, request for permission
+     * If permission denied and user choose 'Nerver Ask Again', show snackbar with an action that
+     * navigate to app settings
      */
     private void requestWriteExternalPermission() {
         Log.w(TAG, "Write External permission is not granted. Requesting permission");
@@ -486,9 +492,9 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
                 imageAdapter.removeSelectedPosition(selectedItemPosition, position);
             }
         } else {
-            if (selectedItemPosition != -1)
+            if (selectedItemPosition != -1) {
                 imageAdapter.removeSelectedPosition(selectedItemPosition, position);
-            else {
+            } else {
                 if (selectedImages.size() > 0) {
                     imageAdapter.removeAllSelectedSingleClick();
                 }
@@ -557,7 +563,12 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
     private void captureImage() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (intent.resolveActivity(getPackageManager()) != null) {
-            File imageFile = ImageUtils.createImageFile(imageDirectory);
+            File imageFile;
+            if (TextUtils.isEmpty(targetFolderPath)) {
+                imageFile = ImageUtils.createImageFileInMedia(imageDirectory);
+            } else {
+                imageFile = ImageUtils.createImageFileInFolder(targetFolderPath);
+            }
             if (imageFile != null) {
                 String authority = getPackageName() + ".fileprovider";
                 Uri uri = FileProvider.getUriForFile(this, authority, imageFile);
@@ -565,7 +576,8 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
                 startActivityForResult(intent, Constants.REQUEST_CODE_CAPTURE);
             } else {
-                Toast.makeText(this, getString(R.string.error_create_image_file), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.error_create_image_file), Toast.LENGTH_LONG)
+                     .show();
             }
         } else {
             Toast.makeText(this, getString(R.string.error_no_camera), Toast.LENGTH_LONG).show();
@@ -598,17 +610,19 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
 
                         if (folderMode) {
                             setFolderAdapter();
-                            if (folders.size() != 0)
+                            if (folders.size() != 0) {
                                 hideLoading();
-                            else
+                            } else {
                                 showEmpty();
+                            }
 
                         } else {
                             setImageAdapter(newImages);
-                            if (images.size() != 0)
+                            if (images.size() != 0) {
                                 hideLoading();
-                            else
+                            } else {
                                 showEmpty();
+                            }
                         }
 
                         break;
@@ -632,8 +646,9 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
      * Stop loading data task
      */
     private void abortLoading() {
-        if (thread == null)
+        if (thread == null) {
             return;
+        }
         if (thread.isAlive()) {
             thread.interrupt();
             try {
@@ -665,17 +680,22 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
             } else {
                 if (selectedImages.size() == 0) {
                     actionBar.setTitle(imageTitle);
-                    if (menuDone != null)
+                    if (menuDone != null) {
                         menuDone.setVisible(false);
+                    }
                 } else {
                     if (mode == ImagePickerActivity.MODE_MULTIPLE) {
-                        if (limit == Constants.MAX_LIMIT)
-                            actionBar.setTitle(String.format(getString(R.string.selected), selectedImages.size()));
-                        else
-                            actionBar.setTitle(String.format(getString(R.string.selected_with_limit), selectedImages.size(), limit));
+                        if (limit == Constants.MAX_LIMIT) {
+                            actionBar.setTitle(String.format(getString(R.string.selected), selectedImages
+                                    .size()));
+                        } else {
+                            actionBar.setTitle(String.format(getString(R.string.selected_with_limit), selectedImages
+                                    .size(), limit));
+                        }
                     }
-                    if (menuDone != null)
+                    if (menuDone != null) {
                         menuDone.setVisible(true);
+                    }
                 }
             }
         }
@@ -748,8 +768,18 @@ public class ImagePickerActivity extends AppCompatActivity implements OnImageCli
                 return;
             }
 
-            Cursor cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection,
-                    null, null, MediaStore.Images.Media.DATE_ADDED);
+            Cursor cursor;
+            if (TextUtils.isEmpty(targetFolderPath)) {
+                // Load all images
+                cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection,
+                        null, null, MediaStore.Images.Media.DATE_ADDED);
+            } else {
+                // Load by specific folder path
+                String where = MediaStore.Images.Media.DATA + " like ? ";
+                String[] whereArgs = new String[]{targetFolderPath + "%"};
+                cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection,
+                        where, whereArgs, MediaStore.Images.Media.DATE_ADDED);
+            }
 
             if (cursor == null) {
                 message = handler.obtainMessage();

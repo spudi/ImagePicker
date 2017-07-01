@@ -28,6 +28,7 @@ public abstract class ImagePicker {
     private ArrayList<Image> selectedImages;
     private boolean folderMode;
     private String imageDirectory;
+    private String targetFolderPath;
 
     public abstract void start(int requestCode);
 
@@ -73,6 +74,7 @@ public abstract class ImagePicker {
         this.selectedImages = new ArrayList<>();
         this.folderMode = false;
         this.imageDirectory = activity.getString(R.string.image_directory);
+        this.targetFolderPath = null;
     }
 
 
@@ -130,6 +132,19 @@ public abstract class ImagePicker {
         return this;
     }
 
+    /**
+     * <p>Read images only from specific folder</p>
+     * <p><b>NOTE:</b> this will override param in {@link
+     * #imageDirectory(String)} method - to store images in {@code [targetFolderPath]}</p>
+     *
+     * @param targetFolderPath e.g. <code>Environment.getExternalStorageDirectory().getAbsolutePath()
+     * + "/OnlyMyAppPhotos/"</code>
+     */
+    public ImagePicker targetFolderPath(String targetFolderPath) {
+        this.targetFolderPath = targetFolderPath;
+        return this;
+    }
+
     public Intent getIntent(Activity activity) {
         Intent intent = new Intent(activity, ImagePickerActivity.class);
         intent.putExtra(ImagePickerActivity.INTENT_EXTRA_MODE, mode);
@@ -140,6 +155,7 @@ public abstract class ImagePicker {
         intent.putExtra(ImagePickerActivity.INTENT_EXTRA_SELECTED_IMAGES, selectedImages);
         intent.putExtra(ImagePickerActivity.INTENT_EXTRA_FOLDER_MODE, folderMode);
         intent.putExtra(ImagePickerActivity.INTENT_EXTRA_IMAGE_DIRECTORY, imageDirectory);
+        intent.putExtra(ImagePickerActivity.INTENT_EXTRA_TARGET_FOLDER_PATH, targetFolderPath);
         return intent;
     }
 
